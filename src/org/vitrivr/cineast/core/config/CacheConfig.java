@@ -115,4 +115,23 @@ public final class CacheConfig {
     public int getLowerThreshold() {
         return lowerThreshold;
     }
+
+    /**
+     * A simple heuristic to determine whether an object of the given size should be cached or kept in-memory.
+     *
+     * @param size Size of the object in bytes.
+     * @return True if object should be kept in memory, false otherwise.
+     */
+    public boolean keepInMemory(int size) {
+        switch (this.cachingPolicy) {
+            case FORCE_DISK_CACHE:
+                return false;
+            case AUTOMATIC:
+                return size <= this.lowerThreshold;
+            case AVOID_CACHE:
+                return size <= this.upperThreshold;
+            default:
+                return true;
+        }
+    }
 }
