@@ -1,8 +1,8 @@
 package org.vitrivr.cineast.core.data.frames;
 
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import org.vitrivr.cineast.core.data.raw.bytes.ByteData;
+import org.vitrivr.cineast.core.util.cache.ByteDataFactory;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -34,11 +34,8 @@ public class AudioFrame {
     /** AudioDescriptor that describes the audio in this frame. */
     private final AudioDescriptor descriptor;
 
-    /** Number of samples per channel in this AudioFrame. */
-    private int numberOfSamples;
-
-    /** ByteBuffer holding the raw 16bit int data. */
-    private ByteBuffer data;
+    /** {@link ByteData} object that holds the audio data. */
+    private ByteData data;
 
     /**
      * Default constructor.
@@ -52,7 +49,7 @@ public class AudioFrame {
         this.idx = idx;
         this.descriptor = descriptor;
         this.timestamp = timestamp;
-        this.setData(data);
+        this.data = ByteDataFactory.newData(data, "audio");
     }
 
     /**
@@ -62,7 +59,7 @@ public class AudioFrame {
      * @return AudioFormat
      */
     public final AudioFormat getFormat() {
-        return new AudioFormat(this.descriptor.getSamplingrate(), BITS_PER_SAMPLE, this.descriptor.getChannels(), true, false);
+        return new AudioFormat(this.descriptor.getSamplingrate(), AudioFrame.BITS_PER_SAMPLE, this.descriptor.getChannels(), true, false);
     }
 
     /**
@@ -89,7 +86,7 @@ public class AudioFrame {
      * @return Size of {@link AudioFrame} in bytes.
      */
     public final int size() {
-        return this.data.array().length;
+        return this.data.size();
     }
 
     /**
@@ -98,7 +95,7 @@ public class AudioFrame {
      * @return Number of samples per channel.
      */
     public final int numberOfSamples() {
-        return this.numberOfSamples;
+        return this.data.size()/(2 * this.descriptor.getChannels());
     }
 
     /**
@@ -134,7 +131,7 @@ public class AudioFrame {
      * @return Duration of the {@link AudioFrame}
      */
     public final float getDuration() {
-        return this.numberOfSamples/this.descriptor.getSamplingrate();
+        return this.numberOfSamples()/this.descriptor.getSamplingrate();
     }
 
     /**
@@ -152,7 +149,7 @@ public class AudioFrame {
      * @return Relative end of the {@link AudioFrame}.
      */
     public final float getEnd() {
-        return this.getStart() + this.numberOfSamples/this.descriptor.getSamplingrate();
+        return this.getStart() + this.numberOfSamples()/this.descriptor.getSamplingrate();
     }
 
     /**
@@ -173,7 +170,7 @@ public class AudioFrame {
      */
     public final short getSampleAsShort(int idx, int channel) {
         if (channel < this.descriptor.getChannels()) {
-            return this.data.getShort(2*idx * this.descriptor.getChannels() + 2*channel);
+            return this.data.buffer().getShort(2*idx * this.descriptor.getChannels() + 2*channel);
         } else {
             throw new IllegalArgumentException("The channel indexed must not exceed the number of channels!");
         }
@@ -234,18 +231,19 @@ public class AudioFrame {
         if (!this.descriptor.equals(that.descriptor)) {
           return false;
         }
-        int bytes = that.descriptor.getChannels() * numberOfSamples * (BITS_PER_SAMPLE/8);
-        if (bytes > that.data.capacity()) {
+        int bytes = that.descriptor.getChannels() * numberOfSamples * (AudioFrame.BITS_PER_SAMPLE / 8);
+        if (bytes > that.size()) {
           return false;
         }
 
         /* Copy data. */
-        byte[] data = new byte[this.data.capacity() + bytes];
-        System.arraycopy(this.data.array(), 0, data, 0, this.data.capacity());
-        System.arraycopy(that.data.array(), 0, data, this.data.capacity(), bytes);
+        byte[] src = this.data.array();
+        byte[] data = new byte[src.length + bytes];
+        System.arraycopy(src, 0, data, 0, src.length);
+        System.arraycopy(that.data.array(), 0, data, src.length, bytes);
 
         /* Update local ByteBuffer reference. */
-        this.setData(data);
+        this.data = ByteDataFactory.newData(data, "audio");
         return true;
     }
 
@@ -257,16 +255,6 @@ public class AudioFrame {
      * @return True on success, false otherwise.
      */
     public boolean append(AudioFrame that) {
-        return this.append(that, that.numberOfSamples);
-    }
-
-    /**
-     * Internal method to update the buffer holding the actual audio data.
-     *
-     * @param data Byte array with the samples.
-     */
-    private void setData(byte[] data) {
-        this.data = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
-        this.numberOfSamples = data.length/(2 * this.descriptor.getChannels());
+        return this.append(that, that.numberOfSamples());
     }
 }
