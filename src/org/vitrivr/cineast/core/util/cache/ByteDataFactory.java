@@ -35,7 +35,7 @@ public class ByteDataFactory {
      * @return {@link ByteData} object.
      */
     public static ByteData newData(byte[] data) {
-        if (Config.sharedConfig().getImagecache().keepInMemory(data.length)) {
+        if (Config.sharedConfig().getCache().keepInMemory(data.length)) {
             return newInMemoryData(data);
         } else {
             return newCachedData(data, "default");
@@ -52,7 +52,7 @@ public class ByteDataFactory {
      * @return {@link ByteData} object.
      */
     public static ByteData newData(byte[] data, String prefix) {
-        if (Config.sharedConfig().getImagecache().keepInMemory(data.length)) {
+        if (Config.sharedConfig().getCache().keepInMemory(data.length)) {
             return newInMemoryData(data);
         } else {
             return newCachedData(data, prefix);
@@ -78,8 +78,8 @@ public class ByteDataFactory {
      * @throws UncheckedIOException If the allocation of the {@link CachedByteData} fails and FORCE_DISK_CACHE cache policy is used.
      */
     public static ByteData newCachedData(byte[] data, String prefix) {
-        final CacheConfig.Policy cachePolicy = Config.sharedConfig().getImagecache().getCachingPolicy();
-        final Path cacheLocation = Config.sharedConfig().getImagecache().getCacheLocation();
+        final CacheConfig.Policy cachePolicy = Config.sharedConfig().getCache().getCachingPolicy();
+        final Path cacheLocation = Config.sharedConfig().getCache().getCacheLocation();
         try {
             return new CachedByteData(data, Files.createTempFile(cacheLocation, prefix, ".tmp"));
         } catch (IOException e) {

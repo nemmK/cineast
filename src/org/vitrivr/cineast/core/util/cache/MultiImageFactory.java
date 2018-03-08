@@ -1,8 +1,6 @@
 package org.vitrivr.cineast.core.util.cache;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.WritableRaster;
 
 import java.io.IOException;
 
@@ -11,9 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.vitrivr.cineast.core.config.CacheConfig;
-import org.vitrivr.cineast.core.data.raw.bytes.ByteData;
-import org.vitrivr.cineast.core.data.raw.bytes.CachedByteData;
-import org.vitrivr.cineast.core.data.raw.bytes.InMemoryByteData;
 import org.vitrivr.cineast.core.data.raw.images.CachedMultiImage;
 
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +48,7 @@ public class MultiImageFactory {
      * @return
      */
     public static MultiImage newMultiImage(BufferedImage bimg, BufferedImage thumb) {
-        if (Config.sharedConfig().getImagecache().keepInMemory(bimg.getWidth() * bimg.getHeight() * 3 * 8)) {
+        if (Config.sharedConfig().getCache().keepInMemory(bimg.getWidth() * bimg.getHeight() * 3 * 8)) {
             return new InMemoryMultiImage(bimg, thumb);
         } else {
             return newCachedMultiImage(bimg, thumb, PREFIX);
@@ -71,7 +66,7 @@ public class MultiImageFactory {
         height = MultiImageFactory.checkHeight(width, height, colors);
         final BufferedImage bimg = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         bimg.setRGB(0, 0, width, height, colors, 0, width);
-        if (Config.sharedConfig().getImagecache().keepInMemory(colors.length * 8)) {
+        if (Config.sharedConfig().getCache().keepInMemory(colors.length * 8)) {
             return newInMemoryMultiImage(bimg);
         } else {
             return newCachedMultiImage(bimg, PREFIX);
@@ -112,8 +107,8 @@ public class MultiImageFactory {
      * @throws UncheckedIOException If creation of {@link CachedMultiImage} and cache policy equals {@link CacheConfig.Policy#FORCE_DISK_CACHE}.
      */
     public static MultiImage newCachedMultiImage(BufferedImage image, String prefix) {
-        final CacheConfig.Policy cachePolicy = Config.sharedConfig().getImagecache().getCachingPolicy();
-        final Path cacheLocation = Config.sharedConfig().getImagecache().getCacheLocation();
+        final CacheConfig.Policy cachePolicy = Config.sharedConfig().getCache().getCachingPolicy();
+        final Path cacheLocation = Config.sharedConfig().getCache().getCacheLocation();
         try {
             return new CachedMultiImage(image, Files.createTempFile(cacheLocation, PREFIX, ".tmp"));
         } catch (IOException e) {
@@ -138,8 +133,8 @@ public class MultiImageFactory {
      * @throws UncheckedIOException If creation of {@link CachedMultiImage} and cache policy equals {@link CacheConfig.Policy#FORCE_DISK_CACHE}.
      */
     public static MultiImage newCachedMultiImage(BufferedImage image, BufferedImage thumb, String prefix) {
-        final CacheConfig.Policy cachePolicy = Config.sharedConfig().getImagecache().getCachingPolicy();
-        final Path cacheLocation = Config.sharedConfig().getImagecache().getCacheLocation();
+        final CacheConfig.Policy cachePolicy = Config.sharedConfig().getCache().getCachingPolicy();
+        final Path cacheLocation = Config.sharedConfig().getCache().getCacheLocation();
         try {
             return new CachedMultiImage(image, thumb, Files.createTempFile(cacheLocation, prefix, ".tmp"));
         } catch (IOException e) {

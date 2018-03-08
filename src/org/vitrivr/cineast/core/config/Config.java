@@ -25,7 +25,7 @@ public class Config {
     private DatabaseConfig database;
     private RetrieverConfig retriever;
     private ExtractionPipelineConfig extractor;
-    private CacheConfig imagecache;
+    private CacheConfig cache;
     private VisualizationConfig visualization;
     private NeuralNetConfig neuralnet;
     private QueryConfig query;
@@ -96,11 +96,11 @@ public class Config {
     }
 
     @JsonProperty
-    public CacheConfig getImagecache() {
-        return imagecache;
+    public CacheConfig getCache() {
+        return cache;
     }
-    public void setImagecache(CacheConfig imagecache) {
-        this.imagecache = imagecache;
+    public void setCache(CacheConfig cache) {
+        this.cache = cache;
     }
 
     @JsonProperty
