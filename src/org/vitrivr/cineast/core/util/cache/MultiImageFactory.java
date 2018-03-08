@@ -32,18 +32,6 @@ public class MultiImageFactory {
      */
     private static final String PREFIX = "image";
 
-    /* Sets up the cache location (if specified). */
-    static {
-        final Path cacheLocation = Config.sharedConfig().getImagecache().getCacheLocation();
-        try {
-            Files.createDirectories(cacheLocation);
-        } catch (IOException e) {
-            LOGGER.fatal("Could not create the cache location under {}", cacheLocation.toAbsolutePath().toString());
-            LOGGER.fatal(e);
-        }
-    }
-
-
     /**
      * Private constructor as this is a factory class.
      */

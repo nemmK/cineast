@@ -1,13 +1,19 @@
 package org.vitrivr.cineast.core.config;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 public final class CacheConfig {
+    /** Logger instance used to log errors. */
+    private static final Logger LOGGER = LogManager.getLogger();
+
     /**
      * Enumeration representing the cache policy. The cache policy is applied by the DataFactory classes.
      */
@@ -36,8 +42,8 @@ public final class CacheConfig {
     private final Path cacheLocation;
 
     /**
-     * @param cachePolicy     Caching Policy
-     * @param cacheLocation   the file system location of the disk cache
+     * @param cachePolicy Caching Policy
+     * @param cacheLocation The file system location of the disk cache
      */
     @JsonCreator
     public CacheConfig(
@@ -77,6 +83,37 @@ public final class CacheConfig {
             this.cachingPolicy = cachePolicy;
         } else {
             this.cachingPolicy = Policy.AUTOMATIC;
+        }
+
+
+        /* Tries to create the directory structure to the cache location. */
+        try {
+            Files.createDirectories(this.cacheLocation);
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    Files.walkFileTree(this.cacheLocation, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(Path file, @SuppressWarnings("unused") BasicFileAttributes attrs) throws IOException {
+                            Files.delete(file);
+                            return FileVisitResult.CONTINUE;
+                        }
+
+                        @Override
+                        public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
+                            if (e == null) {
+                                Files.delete(dir);
+                                return FileVisitResult.CONTINUE;
+                            }
+                            throw e;
+                        }
+                    });
+                } catch (IOException e) {
+                    LOGGER.fatal("Failed to cleanup the cache location under {}", this.cacheLocation.toAbsolutePath());
+                }
+            }));
+        } catch (IOException e) {
+            LOGGER.fatal("Could not create the cache location under {}", this.cacheLocation.toAbsolutePath());
+            LOGGER.fatal(e);
         }
     }
 
