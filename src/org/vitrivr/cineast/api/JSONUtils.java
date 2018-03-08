@@ -22,7 +22,7 @@ import org.vitrivr.cineast.core.db.dao.reader.MultimediaObjectLookup;
 import org.vitrivr.cineast.core.db.dao.reader.SegmentLookup;
 import org.vitrivr.cineast.core.decode.subtitle.SubtitleItem;
 import org.vitrivr.cineast.core.util.LogHelper;
-import org.vitrivr.cineast.core.data.MultiImageFactory;
+import org.vitrivr.cineast.core.util.cache.MultiImageFactory;
 import org.vitrivr.cineast.core.util.web.ImageParser;
 
 import com.eclipsesource.json.JsonArray;
