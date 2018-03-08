@@ -123,9 +123,10 @@
 		"outputLocation": "out"
 	},
 
-	"imagecache": {
-		"softMemoryLimit": 2048,
-		"hardMemoryLimit": 1024
+	"cache": {
+		"cachePolicy":"AUTOMATIC",
+		"upperThreshold": 5242880,
+		"lowerThreshold": 131072
 	},
 
 	"api": {
