@@ -1,6 +1,9 @@
 package org.vitrivr.cineast.core.data.raw.images;
 
+import net.coobird.thumbnailator.Thumbnails;
+
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 public interface MultiImage {
   
@@ -59,4 +62,24 @@ public interface MultiImage {
 	
 	void clear();
 
+
+
+    /**
+     * Generates a thumbnail version out of the provided {@link BufferedImage} and returns it.
+     *
+     * @param img The image from which to create a thumbnail version.
+     * @return The thumbnail image.
+     */
+    static BufferedImage generateThumb(BufferedImage img){
+        double scale = MAX_THUMB_SIZE / Math.max(img.getWidth(), img.getHeight());
+        if (scale >= 1 || scale <= 0){
+            return img;
+        } else{
+            try {
+                return Thumbnails.of(img).scale(scale).asBufferedImage();
+            } catch (IOException e) {
+                return img;
+            }
+        }
+    }
 }
