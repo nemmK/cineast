@@ -1,10 +1,9 @@
 package org.vitrivr.cineast.core.data.query.containers;
 
-import org.vitrivr.cineast.core.data.MultiImage;
+import org.vitrivr.cineast.core.data.raw.images.MultiImage;
 import org.vitrivr.cineast.core.data.MultiImageFactory;
 import org.vitrivr.cineast.core.data.m3d.Mesh;
 import org.vitrivr.cineast.core.util.mesh.MeshTransformUtil;
-import org.vitrivr.cineast.core.util.web.AudioParser;
 import org.vitrivr.cineast.core.util.web.ImageParser;
 import org.vitrivr.cineast.core.util.web.MeshParser;
 

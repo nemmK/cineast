@@ -1,4 +1,4 @@
-package org.vitrivr.cineast.core.data;
+package org.vitrivr.cineast.core.data.raw.images;
 
 import java.awt.image.BufferedImage;
 
