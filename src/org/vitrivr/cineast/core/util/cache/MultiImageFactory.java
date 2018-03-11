@@ -64,7 +64,7 @@ public class MultiImageFactory {
      */
     public static MultiImage newMultiImage(int width, int height, int[] colors) {
         height = MultiImageFactory.checkHeight(width, height, colors);
-        final BufferedImage bimg = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        final BufferedImage bimg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         bimg.setRGB(0, 0, width, height, colors, 0, width);
         if (Config.sharedConfig().getCache().keepInMemory(colors.length * 8)) {
             return newInMemoryMultiImage(bimg);
@@ -82,7 +82,7 @@ public class MultiImageFactory {
      */
     public static MultiImage newInMemoryMultiImage(int width, int height, int[] colors) {
         height = MultiImageFactory.checkHeight(width, height, colors);
-        final BufferedImage bimg = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        final BufferedImage bimg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         bimg.setRGB(0, 0, width, height, colors, 0, width);
         return newInMemoryMultiImage(bimg);
     }
