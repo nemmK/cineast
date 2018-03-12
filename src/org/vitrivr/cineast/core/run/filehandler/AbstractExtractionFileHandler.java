@@ -269,13 +269,6 @@ public abstract class AbstractExtractionFileHandler<T> implements ExtractionFile
             for (int i = 0; i < this.completeListeners.size(); ++i) {
                 this.completeListeners.get(i).onCompleted(path);
             }
-
-            /*
-             * Trigger garbage collection once in a while. This is specially relevant when many small files are processed, since unused allocated memory could accumulate and trigger swapping.
-             */
-            if (this.count_processed % 50 == 0) {
-                System.gc();
-            }
         }
 
         /* Shutdown the FileHandler. */
@@ -301,7 +294,7 @@ public abstract class AbstractExtractionFileHandler<T> implements ExtractionFile
         } catch (InterruptedException e) {
             LOGGER.warn("Interrupted while waiting for ExtractionPipeline to shutdown!");
         } finally {
-            /* Close all the MetadataExtracto classes. */
+            /* Close all the MetadataExtractor classes. */
             for (MetadataExtractor extractor : this.metadataExtractors) {
                 extractor.finish();
             }
