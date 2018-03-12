@@ -62,8 +62,6 @@ public interface MultiImage {
 	
 	void clear();
 
-
-
     /**
      * Generates a thumbnail version out of the provided {@link BufferedImage} and returns it.
      *
