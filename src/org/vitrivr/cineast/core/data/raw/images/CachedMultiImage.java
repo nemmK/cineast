@@ -56,26 +56,6 @@ public class CachedMultiImage extends CachedByteData implements MultiImage {
     }
 
     /**
-     * Constructor for {@link CachedMultiImage}.
-     *
-     * @param colors The array holding the colors of the original, {@link BufferedImage}.
-     * @param width Width of the image.
-     * @param height Height of the image.
-     *  @throws IOException If creation of the cache file failed.
-     */
-    public CachedMultiImage(int[] colors, int width, int height, Path cacheFile) throws IOException {
-        super(toBytes(colors, width, height), cacheFile);
-
-        this.width = width;
-        this.height = height;
-        this.type = BufferedImage.TYPE_INT_RGB;
-
-        final BufferedImage bimg = new BufferedImage(this.width, this.height, this.type);
-        bimg.setRGB(0, 0, this.width, this.height, colors, 0, this.width);
-        this.thumb = new SoftReference<>(MultiImage.generateThumb(bimg));
-    }
-
-    /**
      * Getter for the thumbnail image of this {@link CachedMultiImage}. If the thumbnail image reference does not
      * exist anymore, a new thumbnail image will be created from the raw data.
      *
