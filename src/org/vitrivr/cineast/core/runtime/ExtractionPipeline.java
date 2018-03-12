@@ -193,8 +193,7 @@ public class ExtractionPipeline implements Runnable, ExecutionTimeCounter {
     }
 
     /**
-     * Shuts the ExtractionPipeline down. Stops the ExecutorService and finishes the
-     * extractors.
+     * Shuts the ExtractionPipeline down. Stops the ExecutorService and finishes the extractors.
      */
     private void shutdown() {
         try {
