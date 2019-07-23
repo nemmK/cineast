@@ -1,5 +1,8 @@
 {
+<<<<<<< HEAD
 	"type":"IMAGE",
+=======
+>>>>>>> 3ce1ec7ef70f4dc6484a55d14ab5b421e03e4ee3
 	"input":{
 		"path": "data/",
 		"depth": 3,
@@ -16,10 +19,12 @@
 		{"name": "AverageColorGrid8"},
 		{"name": "AverageColorRaster"},
 		{"name": "AverageFuzzyHist"},
+		{"name": "AverageColorGrid8Reduced15"},
 		{"name": "CLD"},
 		{"name": "EdgeARP88"},
 		{"name": "EdgeGrid16"},
 		{"name": "EHD"},
+		{"name": "HPCP12Shingle"},
 		{"name": "MedianColor"},
 		{"name": "MedianColorGrid8"},
 		{"name": "HOGMirflickr25K512"},
