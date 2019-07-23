@@ -21,6 +21,11 @@ public class OCRSearch extends SolrTextRetriever {
   }
 
   @Override
+  public void processSegment(SegmentContainer shot) {
+    super.processSegment(shot);
+  }
+
+  @Override
   protected String[] generateQuery(SegmentContainer sc, ReadableQueryConfig qc) {
     String[] split = sc.getText().split(" ");
     String[] _return = new String[split.length];

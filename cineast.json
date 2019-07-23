@@ -1,8 +1,8 @@
 {
   "database": {
     "host": "localhost",
-    "selector": "COTTONTAIL",
-    "writer": "COTTONTAIL",
+    "selector": "PROTO",
+    "writer": "PROTO",
     "port": 1865,
     "plaintext": true
   },
