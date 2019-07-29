@@ -1,5 +1,10 @@
-package org.vitrivr.cineast.core.features.test_TF;
+/**
+ * based on https://github.com/argman/EAST
+ */
 
+package org.vitrivr.cineast.core.features.testing;
+
+import ch.unibas.dmi.dbis.cottontail.grpc.CottontailGrpc.Index;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -9,15 +14,10 @@ import javax.imageio.ImageIO;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.NDArrayIndex;
-import org.nd4j.linalg.indexing.conditions.Condition;
-import org.tensorflow.DataType;
-import org.tensorflow.Graph;
-import org.tensorflow.Operation;
-import org.tensorflow.Session;
 
-public class Evaluation_TF {
+public class Boxing {
 
-  public BufferedImage getBufferedImage() {
+  public static BufferedImage getBufferedImage() {
     BufferedImage img = null;
     try {
       //not correct path
@@ -29,9 +29,8 @@ public class Evaluation_TF {
     return img;
   }
 
-  //resize image to a size multiple of 32 which is required by the network
-  //returns the resized image
-  public BufferedImage resizeImage(BufferedImage img) {
+
+  public static BufferedImage resizeImage(BufferedImage img) {
     int maxSizeLen = 2400;
     int height = img.getHeight();
     int width = img.getWidth();
@@ -68,7 +67,7 @@ public class Evaluation_TF {
     g2d.dispose();
 
     // writes to output file
-    //not correct path
+
     try {
       ImageIO.write(outputImage, "jpg", new File("data/outputImg.jpg"));
     } catch (Exception e) {
@@ -81,18 +80,29 @@ public class Evaluation_TF {
     return img;
   }
 
-  //restore text boxes from score map and geo map
-  //void not correct type
-  public INDArray detect (INDArray scoreMap, INDArray geoMap, Timer timter){
+
+  public static INDArray detect (INDArray scoreMap, INDArray geoMap){
     if (scoreMap.shape().length == 4){
       scoreMap = scoreMap.get(NDArrayIndex.indices(0), NDArrayIndex.all(),NDArrayIndex.all(),NDArrayIndex.indices(0));
       geoMap = geoMap.get(NDArrayIndex.indices(0), NDArrayIndex.all(),NDArrayIndex.all(),NDArrayIndex.indices(0));
     }
 
-    //TODO get array of entries bigger than 0.8 and store them in an array (sorted)
-    INDArray temp = Nd4j.zeros(3,5);
+    //save the index in a (x,2) (row,column - of original array) tupel of the values bigger than 0.8 for scoreMap
+    INDArray temp = Nd4j.zeros(0,2);
+    int rowIndex = 0;
+    for(int i = 0; i < scoreMap.rows(); i ++)
+      for (int j = 0; j < scoreMap.columns(); j++){
+        if (scoreMap.getDouble(i,j) > 0.8){
+          double [] value = {i, scoreMap.getDouble(i,j)};
+          INDArray rotToInsert = Nd4j.create(value);
+          temp.putRow(rowIndex,rotToInsert);
+          rowIndex++;
+        }
+      }
+
 
     //restore
+    //TODO change input of method of textBoxResored
     INDArray textBoxRestored = restoreRectangle(temp, geoMap);
     long [] shape = textBoxRestored.shape();
     INDArray boxes = Nd4j.zerosLike(Nd4j.create(shape[0],9));
@@ -102,6 +112,10 @@ public class Evaluation_TF {
 
     //TODO how to get indexes of array to assign?
     //boxes.get(NDArrayIndex.all(), NDArrayIndex.indices(8)).assign(scoreMap.get(row,column));
+
+    long [] boxesShape = boxes.shape();
+    if (boxesShape[0] == 0)
+      return null;
 
     /*
     for i, box in enumerate(boxes):
@@ -118,7 +132,19 @@ public class Evaluation_TF {
     return boxes;
   }
 
-  public INDArray restoreRectangle(INDArray origin, INDArray geometry){
+  public static INDArray sortPolynom(INDArray poly){
+    INDArray sumArray = poly.sum(1);
+    //convert sumArray to 1D array and get index of Min
+    int minAxis = 0;
+    if (Math.abs(poly.getDouble(0,0)- poly.getDouble(1,0)) > Math.abs(poly.getDouble(0,1) - poly.getDouble(1,1)))
+      return poly;
+    else {
+      poly[[0, 3, 2, 1]];
+      return poly ;
+    }
+  }
+
+  public static INDArray restoreRectangle(INDArray origin, INDArray geometry){
     INDArray d = geometry.get(NDArrayIndex.all(), NDArrayIndex.interval(0,4));
     INDArray angle = geometry.get(NDArrayIndex.all(), NDArrayIndex.indices(4));
     //TODO get array with entries bigger than zero
@@ -131,6 +157,20 @@ public class Evaluation_TF {
 
     return d;
   }
+
+  public static void main(String[] args) {
+
+    //debugging
+    INDArray origin = Nd4j.rand(5,3);
+    INDArray geometry = Nd4j.rand(5,3);
+    restoreRectangle(origin,geometry);
+
+    INDArray poly = Nd4j.rand(5,6);
+    sortPolynom(poly);
+
+
+  }
+  //transform model in a .pb file
 
 
 }

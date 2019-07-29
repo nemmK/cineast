@@ -1,8 +1,6 @@
 {
-<<<<<<< HEAD
 	"type":"IMAGE",
-=======
->>>>>>> 3ce1ec7ef70f4dc6484a55d14ab5b421e03e4ee3
+
 	"input":{
 		"path": "data/",
 		"depth": 3,
