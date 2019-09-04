@@ -4,6 +4,7 @@
 
 package org.vitrivr.cineast.core.features.testing;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -12,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import javax.imageio.ImageIO;
+import net.coobird.thumbnailator.Thumbnailator;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -33,11 +35,10 @@ public class Boxing {
    *
    * @return image
    */
-  public static BufferedImage getBufferedImage() {
+  public static BufferedImage getBufferedImage(String imagePath) {
     BufferedImage img = null;
     try {
-      //not correct path
-      img = ImageIO.read(new File("data/img_3.jpg"));
+      img = ImageIO.read(new File(imagePath));
     } catch (
         IOException e) {
       e.printStackTrace();
@@ -59,6 +60,8 @@ public class Boxing {
     float resizeWidth = width;
     float ratio = 1;
 
+    BufferedImage image = img;
+
     if (Math.max(resizeHeight, resizeWidth) > maxLength) {
       if (resizeHeight > resizeWidth)
         ratio = maxLength / resizeHeight;
@@ -78,6 +81,7 @@ public class Boxing {
     resizeHeight = Math.max(32, resizeHeight);
     resizeWidth = Math.max(32, resizeWidth);
 
+    /*
     // creates output image
     BufferedImage outputImage = new BufferedImage((int) resizeWidth,
         (int) resizeHeight, img.getType());
@@ -93,12 +97,11 @@ public class Boxing {
     } catch (Exception e) {
       e.printStackTrace();
     }
+     */
 
-    //is the ratio needed?
-    float ratioHeight = resizeHeight / height;
-    float ratioWidth = resizeWidth / width;
+    image = Thumbnailator.createThumbnail(image,(int) resizeWidth,(int) resizeHeight);
 
-    return img;
+    return image;
   }
 
   /**
@@ -448,49 +451,44 @@ public class Boxing {
 
   public static void main(String[] args) {
 
+    /*
     int [] scoreshape = {1,168,320,1};
     INDArray scoremap = Nd4j.rand(scoreshape);
     int [] geoshape = {1,168,320,1};
     INDArray geomap = Nd4j.rand(geoshape);
-
     detect(scoremap,geomap);
+     */
+
+    String imagePath = "data/img_1.jpg";
+    String weightsPath = "east_checkpoint/model.ckpt-49491.data-00000-of-00001";
+
+    //Get the resized image
+    BufferedImage image = getBufferedImage(imagePath);
+    image = resizeImage(image);
+
+    float[][][][] floatImage = new float[1][image.getHeight()][image.getWidth()][3];
+
+    for (int x = 0; x < image.getWidth(); x++) {
+      for (int y = 0; y < image.getHeight(); y++) {
+        floatImage[0][y][x][0] = new Color(image.getRGB(x, y)).getRed() / 127.5f - 1.0f;
+        floatImage[0][y][x][1] = new Color(image.getRGB(x, y)).getGreen() / 127.5f - 1.0f;
+        floatImage[0][y][x][2] = new Color(image.getRGB(x, y)).getBlue() / 127.5f - 1.0f;
+      }
+    }
 
     /* Load model */
     SavedModelBundle load = SavedModelBundle.load("data/export", "serve");
 
-    Graph graph = load.graph();
+    //score = feature_fusion/Conv_7/Sigmoid:0, geometry = geometry = feature_fusion/concat_3:0; input layer = input_images:0
+    List<Tensor<?>> tensor = load.session().runner()
+        .feed("input_images:0", Tensor.create(floatImage, Float.class))
+        .fetch("feature_fusion/Conv_7/Sigmoid:0").fetch("feature_fusion/concat_3:0")
+        .run();
 
-    Operation inputImages = graph.opBuilder("Placeholder", "input_images")
-        .setAttr("dtype", DataType.fromClass(Float.class))
-        .build();
+    Tensor scoreT = tensor.get(0);
+    Tensor geometryT = tensor.get(1);
 
-    //globalStep are the variables - how to get them in java?
-
-    //TODO
-    /*
-    Get the layer for the f_score and f_geometry with the model function
-    Next read/restore the model and start the session
-    For each picture resize and detect to get the boxes
-     */
-
-    //score = feature_fusion/Conv_7/Sigmoid:0
-    //geometry = feature_fusion/concat_3:0
-    //input layer = input_images:0
+    //Convert the tensors to NDArray
 
   }
-
-  /*
-  Not really clear what the code does.. resnet returns the tensors
-   */
-  public static void model(Operation inputImages){
-    double weightDecay = 0.00001;
-    //TODO mean image substraction
-
-
-
-  }
-
-
-
-
 }
