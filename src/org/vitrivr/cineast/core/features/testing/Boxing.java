@@ -10,13 +10,19 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import javax.imageio.ImageIO;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.NDArrayIndex;
+import org.tensorflow.DataType;
 import org.tensorflow.Graph;
+import org.tensorflow.Operation;
 import org.tensorflow.Output;
+import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Session;
+import org.tensorflow.Tensor;
 import org.vitrivr.cineast.core.features.neuralnet.tf.GraphBuilder;
 import org.vitrivr.cineast.core.util.LogHelper;
 
@@ -103,15 +109,19 @@ public class Boxing {
    */
   public static INDArray detect (INDArray scoreMap, INDArray geoMap){
     if (scoreMap.shape().length == 4){
-      scoreMap = scoreMap.get(NDArrayIndex.indices(0), NDArrayIndex.all(),NDArrayIndex.all(),NDArrayIndex.indices(0));
-      geoMap = geoMap.get(NDArrayIndex.indices(0), NDArrayIndex.all(),NDArrayIndex.all(),NDArrayIndex.indices(0));
+      //squeeze removes dimension of size 1
+      //scoreMap = scoreMap.get(NDArrayIndex.indices(0), NDArrayIndex.all(),NDArrayIndex.all(),NDArrayIndex.indices(0));
+      scoreMap = Nd4j.squeeze(scoreMap,0);
+      scoreMap = Nd4j.squeeze(scoreMap,2);
+      geoMap = Nd4j.squeeze(geoMap,0);
+      //geoMap = geoMap.get(NDArrayIndex.indices(0), NDArrayIndex.all(),NDArrayIndex.all(),NDArrayIndex.indices(0));
     }
 
-    //count amount of values bigger than 0.8
+    //count amount of values bigger than 0.8 = scroe_map_thresh
     int numberRows = 0;
-    for(int i = 0; i < scoreMap.rows(); i ++) {
-      for (int j = 0; j < scoreMap.columns(); j++) {
-        if (scoreMap.getDouble(i, j) > 0.8) {
+    for(int row = 0; row < scoreMap.rows(); row ++) {
+      for (int column = 0; column < scoreMap.columns(); column++) {
+        if (scoreMap.getDouble(row, column) > 0.8) {
           numberRows++;
         }
       }
@@ -119,10 +129,10 @@ public class Boxing {
     //save the index in a (x,2) (row, column - of original array) tupel of the values bigger than 0.8 for scoreMap
     INDArray temp = Nd4j.zeros(numberRows,2);
     int rowIndex = 0;
-    for(int i = 0; i < scoreMap.rows(); i ++) {
-      for (int j = 0; j < scoreMap.columns(); j++) {
-        if (scoreMap.getDouble(i, j) > 0.8) {
-          double[] value = {i,j};
+    for(int row = 0; row < scoreMap.rows(); row ++) {
+      for (int column = 0; column < scoreMap.columns(); column++) {
+        if (scoreMap.getDouble(row, column) > 0.8) {
+          double[] value = {row,column};
           INDArray rowToInsert = Nd4j.create(value);
           temp.putRow(rowIndex, rowToInsert);
           rowIndex++;
@@ -133,13 +143,16 @@ public class Boxing {
     //sort from smallest to largest value
     Nd4j.sortRows(temp,1,true);
 
+
+    //Start timer
     //restore
     INDArray origin = Nd4j.zeros(numberRows,2);
     origin.putColumn(0, temp.getColumn(1).dup());
     origin.putColumn(1, temp.getColumn(0).dup());
     origin.muli(4);
 
-    //geoMap
+    //TODO geomap
+
     INDArray textBoxRestored = restoreRectangle(origin, geoMap);
     long [] shape = textBoxRestored.shape();
     INDArray boxes = Nd4j.zerosLike(Nd4j.create(shape[0],9));
@@ -148,6 +161,9 @@ public class Boxing {
 
     INDArray row = temp.get(NDArrayIndex.all(), NDArrayIndex.indices(0));
     INDArray column = temp.get(NDArrayIndex.all(), NDArrayIndex.indices(1));
+
+    INDArray index = origin.getColumn(0);
+    INDArray indexOnde = origin.getColumn(1);
 
     //boxes[:, 8] = score_map[xy_text[:, 0], xy_text[:, 1]]
     //assign last row which should still be empty with the values of score map
@@ -158,17 +174,9 @@ public class Boxing {
     if (boxesShape[0] == 0)
       return null;
 
-    //fill the polygons todo
-    /*
-    for i, box in enumerate(boxes):
-        mask = np.zeros_like(score_map, dtype=np.uint8)
-        cv2.fillPoly(mask, box[:8].reshape((-1, 4, 2)).astype(np.int32) // 4, 1)
-        boxes[i, 8] = cv2.mean(score_map, mask)[0]
-    boxes = boxes[boxes[:, 8] > box_thresh
-     */
+    //TODO fill the polygons
     for ( int i = 0 ; i < boxes.rows() ; i++){
       INDArray mask = Nd4j.zerosLike(scoreMap);
-
     }
 
     return boxes;
@@ -198,9 +206,13 @@ public class Boxing {
    * @return
    */
   public static INDArray restoreRectangle(INDArray origin, INDArray geometry){
-    INDArray d = geometry.get(NDArrayIndex.all(), NDArrayIndex.interval(0,4));
-    INDArray angle = geometry.get(NDArrayIndex.all(), NDArrayIndex.indices(4));
+    //The first four columns of geometry
+    int rankGeo = geometry.rank();
 
+    INDArray d = geometry.get(NDArrayIndex.all(), NDArrayIndex.interval(0,4));
+    //Only the fifth column of geometry (index 4 bc starting at 0)
+    INDArray angle = geometry.get(NDArrayIndex.all(), NDArrayIndex.point(4));
+    int number = d.rank();
     int numberRows = 0;
     for(int i = 0; i < angle.rows(); i ++) {
       if (angle.getDouble(i, 0) >= 0.0) {
@@ -436,57 +448,49 @@ public class Boxing {
 
   public static void main(String[] args) {
 
-    //debugging
-    INDArray origin = Nd4j.rand(5,3);
-    INDArray geometry = Nd4j.rand(5,3);
-    //restoreRectangle(origin,geometry);
-    detect(origin,geometry);
-    INDArray poly = Nd4j.rand(5,6);
-    //sortPolynom(poly);
+    int [] scoreshape = {1,168,320,1};
+    INDArray scoremap = Nd4j.rand(scoreshape);
+    int [] geoshape = {1,168,320,1};
+    INDArray geomap = Nd4j.rand(geoshape);
 
+    detect(scoremap,geomap);
 
-    //Tensorflow
-    final Graph preprocessingGraph;
-    final Session preprocessingSession;
-    final String imageOutName;
-    final Graph boxingGraph;
-    final Session boxingSession;
+    /* Load model */
+    SavedModelBundle load = SavedModelBundle.load("data/export", "serve");
 
-    byte[] GRAPH_DEF = new byte[0];
-    try {
-      GRAPH_DEF = Files
-          .readAllBytes((Paths.get("resources/Boxing.pb"))); //TODO change path
-    } catch (IOException e) {
-      throw new RuntimeException(
-          "could not load graph for Boxing: " + LogHelper.getStackTrace(e));
-    }
-    boxingGraph = new Graph();
-    boxingGraph.importGraphDef(GRAPH_DEF);
-    boxingSession = new Session(boxingGraph);
+    Graph graph = load.graph();
 
-    preprocessingGraph = new Graph();
+    Operation inputImages = graph.opBuilder("Placeholder", "input_images")
+        .setAttr("dtype", DataType.fromClass(Float.class))
+        .build();
 
-    GraphBuilder graphBuilder = new GraphBuilder(preprocessingGraph);
+    //globalStep are the variables - how to get them in java?
 
-    Output<Float> imageFloat = graphBuilder.placeholder("T", Float.class);
+    //TODO
+    /*
+    Get the layer for the f_score and f_geometry with the model function
+    Next read/restore the model and start the session
+    For each picture resize and detect to get the boxes
+     */
 
-    final int[] size = new int[]{416, 416};
-
-    final Output<Float> output =
-
-        graphBuilder.resizeBilinear( // Resize using bilinear interpolation
-            graphBuilder.expandDims( // Increase the output tensors dimension
-                imageFloat,
-                graphBuilder.constant("make_batch", 0)),
-            graphBuilder.constant("size", size)
-        );
-
-    imageOutName = output.op().name();
-
-    preprocessingSession = new Session(preprocessingGraph);
+    //score = feature_fusion/Conv_7/Sigmoid:0
+    //geometry = feature_fusion/concat_3:0
+    //input layer = input_images:0
 
   }
-  //transform model in a .pb file
+
+  /*
+  Not really clear what the code does.. resnet returns the tensors
+   */
+  public static void model(Operation inputImages){
+    double weightDecay = 0.00001;
+    //TODO mean image substraction
+
+
+
+  }
+
+
 
 
 }
