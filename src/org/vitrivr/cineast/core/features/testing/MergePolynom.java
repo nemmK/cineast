@@ -79,7 +79,6 @@ public class MergePolynom {
     int [] yData = new int[4];
 
     float score = 0;
-    poly[0].
     return null;
   }
 
@@ -96,5 +95,9 @@ public class MergePolynom {
     }
 
     return polys;
+  }
+
+  public static void main(String[] args) {
+    getPoly();
   }
 }
