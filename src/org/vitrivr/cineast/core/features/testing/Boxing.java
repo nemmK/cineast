@@ -73,31 +73,13 @@ public class Boxing {
     resizeWidth = (int) (resizeWidth * ratio);
 
     if (resizeHeight % 32 != 0)
-      resizeHeight = (resizeHeight / 32 - 1) * 32;
+      resizeHeight = ((float)((int)(resizeHeight / 32)) - 1) * 32;
 
     if (resizeWidth % 32 != 0)
-      resizeWidth = (resizeWidth / 32 - 1) * 32;
+      resizeWidth = ((float)((int)(resizeWidth / 32)) - 1) * 32;
 
     resizeHeight = Math.max(32, resizeHeight);
     resizeWidth = Math.max(32, resizeWidth);
-
-    /*
-    // creates output image
-    BufferedImage outputImage = new BufferedImage((int) resizeWidth,
-        (int) resizeHeight, img.getType());
-
-    // scales the input image to the output image
-    Graphics2D g2d = outputImage.createGraphics();
-    g2d.drawImage(img, 0, 0, (int) resizeWidth, (int) resizeHeight, null);
-    g2d.dispose();
-
-    // writes to output file
-    try {
-      ImageIO.write(outputImage, "jpg", new File("data/outputImg.jpg"));
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-     */
 
     image = Thumbnailator.createThumbnail(image,(int) resizeWidth,(int) resizeHeight);
 
@@ -460,9 +442,9 @@ public class Boxing {
      */
 
     String imagePath = "data/img_1.jpg";
-    String weightsPath = "east_checkpoint/model.ckpt-49491.data-00000-of-00001";
+    //String weightsPath = "east_checkpoint/model.ckpt-49491.data-00000-of-00001";
 
-    //Get the resized image
+    /*Get the resized image */
     BufferedImage image = getBufferedImage(imagePath);
     image = resizeImage(image);
 
@@ -479,14 +461,16 @@ public class Boxing {
     /* Load model */
     SavedModelBundle load = SavedModelBundle.load("data/export", "serve");
 
-    //score = feature_fusion/Conv_7/Sigmoid:0, geometry = geometry = feature_fusion/concat_3:0; input layer = input_images:0
+    /* score = feature_fusion/Conv_7/Sigmoid:0, geometry = geometry = feature_fusion/concat_3:0; input layer = input_images:0 */
     List<Tensor<?>> tensor = load.session().runner()
         .feed("input_images:0", Tensor.create(floatImage, Float.class))
         .fetch("feature_fusion/Conv_7/Sigmoid:0").fetch("feature_fusion/concat_3:0")
         .run();
 
-    Tensor scoreT = tensor.get(0);
-    Tensor geometryT = tensor.get(1);
+    Tensor scoreTensor = tensor.get(0);
+    Tensor geometryTensor = tensor.get(1);
+    long [] shapeScore = scoreTensor.shape();
+    long [] shapeGeo = geometryTensor.shape();
 
     //Convert the tensors to NDArray
 
