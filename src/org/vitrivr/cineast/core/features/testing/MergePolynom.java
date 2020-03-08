@@ -1,9 +1,25 @@
+/**
+ * based on https://github.com/argman/EAST
+ * lanms.h file
+ */
 package org.vitrivr.cineast.core.features.testing;
 
 import java.awt.Polygon;
 
+/**
+ * This class all the mathematical calculation are made to draw the boxes.
+ */
 public class MergePolynom {
 
+  //TODO consturctor is missing
+
+  /**
+   * This method adds a new polygon to be merged with.
+   * @param p
+   * @return
+   */
+
+  //TODO
   public static Polygon addPolygon(Polygon[] p) {
     return null;
 
