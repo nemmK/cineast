@@ -6,6 +6,7 @@ package org.vitrivr.cineast.core.features.testing;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -56,32 +57,39 @@ public class Boxing {
     int maxLength = 2400;
     int height = img.getHeight();
     int width = img.getWidth();
-    float resizeHeight = height;
-    float resizeWidth = width;
+    int resizeHeight = height;
+    int resizeWidth = width;
     float ratio = 1;
 
     BufferedImage image = img;
 
     if (Math.max(resizeHeight, resizeWidth) > maxLength) {
       if (resizeHeight > resizeWidth)
-        ratio = maxLength / resizeHeight;
+        ratio = (float) maxLength / resizeHeight;
       else
-        ratio = maxLength / resizeWidth;
+        ratio = (float) maxLength / resizeWidth;
     }
 
     resizeHeight = (int) (resizeHeight * ratio);
     resizeWidth = (int) (resizeWidth * ratio);
 
-    if (resizeHeight % 32 != 0)
-      resizeHeight = ((float)((int)(resizeHeight / 32)) - 1) * 32;
+    if (resizeHeight % 32 != 0){
+      resizeHeight = (((resizeHeight / 32)) - 1) * 32;
+    }
 
-    if (resizeWidth % 32 != 0)
-      resizeWidth = ((float)((int)(resizeWidth / 32)) - 1) * 32;
+    if (resizeWidth % 32 != 0) {
+      resizeWidth = (((resizeWidth / 32)) - 1) * 32;
+    }
 
     resizeHeight = Math.max(32, resizeHeight);
     resizeWidth = Math.max(32, resizeWidth);
 
-    image = Thumbnailator.createThumbnail(image,(int) resizeWidth,(int) resizeHeight);
+    image = new BufferedImage(resizeWidth, resizeHeight, BufferedImage.TRANSLUCENT);
+    Graphics2D g2 = image.createGraphics();
+    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+        RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+    g2.drawImage(img, 0, 0, resizeWidth, resizeHeight, null);
+    g2.dispose();
 
     return image;
   }
@@ -433,14 +441,6 @@ public class Boxing {
 
   public static void main(String[] args) {
 
-    /*
-    int [] scoreshape = {1,168,320,1};
-    INDArray scoremap = Nd4j.rand(scoreshape);
-    int [] geoshape = {1,168,320,1};
-    INDArray geomap = Nd4j.rand(geoshape);
-    detect(scoremap,geomap);
-     */
-
     String imagePath = "data/img_1.jpg";
     //String weightsPath = "east_checkpoint/model.ckpt-49491.data-00000-of-00001";
 
@@ -471,8 +471,17 @@ public class Boxing {
     Tensor geometryTensor = tensor.get(1);
     long [] shapeScore = scoreTensor.shape();
     long [] shapeGeo = geometryTensor.shape();
+    float [] testFl = {0,0,0,0};
+   // INDArray testScore = Nd4j.create(testFl,shapeScore);
+    INDArray scoremap = Nd4j.zeros((int) shapeScore[0], (int) shapeScore[1], (int) shapeScore[2], (int) shapeScore[3]);
+    long [] shape = scoremap.shape();
+    float [] test = {0};
+    INDArray geomap = Nd4j.create((int) shapeGeo[0], (int) shapeGeo[1], (int) shapeGeo[2], (int) shapeGeo[3]);
+    scoreTensor.copyTo(scoremap);
+    geometryTensor.copyTo(geomap);
+    //detect(scoremap,geomap);
+    detect(scoremap,scoremap);
 
-    //Convert the tensors to NDArray
 
   }
 }
