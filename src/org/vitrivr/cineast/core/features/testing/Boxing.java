@@ -101,6 +101,16 @@ public class Boxing {
    * @return merged text box
    */
   public static INDArray detect (INDArray scoreMap, INDArray geoMap){
+
+    /*
+    long [] scoreShape = scoreMap.shape();
+    long [] geoShape = geoMap.shape();
+    INDArray scoreNew = Nd4j.create(scoreShape[1],scoreShape[2]);
+    INDArray geoNew = Nd4j.create(geoShape[1],geoShape[2],geoShape[3]);
+
+     */
+
+    // decrease shape of the array (scoremap - remove first and last dimension; geomap -remove first dimension)
     if (scoreMap.shape().length == 4){
       //squeeze removes dimension of size 1
       //scoreMap = scoreMap.get(NDArrayIndex.indices(0), NDArrayIndex.all(),NDArrayIndex.all(),NDArrayIndex.indices(0));
@@ -109,6 +119,13 @@ public class Boxing {
       geoMap = Nd4j.squeeze(geoMap,0);
       //geoMap = geoMap.get(NDArrayIndex.indices(0), NDArrayIndex.all(),NDArrayIndex.all(),NDArrayIndex.indices(0));
     }
+
+    /*
+    //debug - to check if dimension is correct
+    long [] scoreSh = scoreMap.shape();
+    long [] geoSh = geoMap.shape();
+
+     */
 
     //count amount of values bigger than 0.8 = scroe_map_thresh
     int numberRows = 0;
@@ -119,6 +136,7 @@ public class Boxing {
         }
       }
     }
+
     //save the index in a (x,2) (row, column - of original array) tupel of the values bigger than 0.8 for scoreMap
     INDArray temp = Nd4j.zeros(numberRows,2);
     int rowIndex = 0;
@@ -137,7 +155,6 @@ public class Boxing {
     Nd4j.sortRows(temp,1,true);
 
 
-    //Start timer
     //restore
     INDArray origin = Nd4j.zeros(numberRows,2);
     origin.putColumn(0, temp.getColumn(1).dup());
@@ -206,12 +223,16 @@ public class Boxing {
     //Only the fifth column of geometry (index 4 bc starting at 0)
     INDArray angle = geometry.get(NDArrayIndex.all(), NDArrayIndex.point(4));
     int number = d.rank();
+
+    //counts amount of values bigger than 0.0
     int numberRows = 0;
     for(int i = 0; i < angle.rows(); i ++) {
       if (angle.getDouble(i, 0) >= 0.0) {
         numberRows++;
       }
     }
+
+    //counts amount of values smaller than 0.0
     int numberRowsOne = 0;
     for(int i = 0; i < angle.rows(); i ++) {
       if (angle.getDouble(i, 0) < 0.0) {
@@ -226,6 +247,7 @@ public class Boxing {
     INDArray dOne = Nd4j.zeros(numberRowsOne,d.columns());
     INDArray angleOne = Nd4j.zeros(numberRowsOne,angle.columns());
 
+    //fills the arrays if values bigger than 0.0
     int rowIndex = 0;
     for(int i = 0; i < angle.rows(); i ++) {
         if (angle.getDouble(i, 0) >= 0.0) {
@@ -238,6 +260,7 @@ public class Boxing {
         }
     }
 
+    //fills the arrays if values smaller than 0.0
     rowIndex = 0;
     for(int i = 0; i < angle.rows(); i ++) {
       if (angle.getDouble(i, 0) < 0.0) {
@@ -268,7 +291,7 @@ public class Boxing {
     //For rotate_matrixY to get cos/sin values
     for(int i = 0; i < tempRotY.rows(); i ++) {
       for (int j = 0; j < tempRotY.columns(); j++) {
-        //bigger than zero to do
+        //TODO bigger than zero to do
         //calculation for AngleZero
         if( i == 0){
           tempRotY.put(i,j,Math.sin(tempRotY.getDouble(i,j))).neg();
@@ -423,7 +446,7 @@ public class Boxing {
       pTwo = pRotate.get(NDArrayIndex.all(),NDArrayIndex.indices(2),NDArrayIndex.all()).add(p3Origin);
       pThree = pRotate.get(NDArrayIndex.all(),NDArrayIndex.indices(3),NDArrayIndex.all()).add(p3Origin);
 
-      //same like before newaxis
+      //TODO same like before newaxis
       pOne = Nd4j.concat(1, pZero,pOne,pTwo, pThree);
     }
     else {
@@ -467,20 +490,27 @@ public class Boxing {
         .fetch("feature_fusion/Conv_7/Sigmoid:0").fetch("feature_fusion/concat_3:0")
         .run();
 
+    //extract the two tensor we use
     Tensor scoreTensor = tensor.get(0);
     Tensor geometryTensor = tensor.get(1);
+
+    //shape is needed to create the corresponding array
     long [] shapeScore = scoreTensor.shape();
     long [] shapeGeo = geometryTensor.shape();
-    float [] testFl = {0,0,0,0};
-   // INDArray testScore = Nd4j.create(testFl,shapeScore);
-    INDArray scoremap = Nd4j.zeros((int) shapeScore[0], (int) shapeScore[1], (int) shapeScore[2], (int) shapeScore[3]);
-    long [] shape = scoremap.shape();
-    float [] test = {0};
-    INDArray geomap = Nd4j.create((int) shapeGeo[0], (int) shapeGeo[1], (int) shapeGeo[2], (int) shapeGeo[3]);
+
+    //create an array with the tensors shape
+    float [][][][] scoremap = new float[(int)shapeScore[0]][(int)shapeScore[1]][(int)shapeScore[2]][(int)shapeScore[3]];
+    float [][][][] geomap = new float[(int)shapeGeo[0]][(int)shapeGeo[1]][(int)shapeGeo[2]][(int)shapeGeo[3]];
+
+    //copyTo() only copies into arrays
     scoreTensor.copyTo(scoremap);
     geometryTensor.copyTo(geomap);
-    //detect(scoremap,geomap);
-    detect(scoremap,scoremap);
+
+    //convert the array to INDArray
+    INDArray scoreIND = Nd4j.create(scoremap);
+    INDArray geoIND = Nd4j.create(geomap);
+
+    detect(scoreIND,geoIND);
 
 
   }
