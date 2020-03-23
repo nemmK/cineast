@@ -137,7 +137,7 @@ public class Boxing {
       }
     }
 
-    //save the index in a (x,2) (row, column - of original array) tupel of the values bigger than 0.8 for scoreMap
+    //save the index in a (x,2) (row, column - of original array) tuple of the values bigger than 0.8 for scoreMap
     INDArray temp = Nd4j.zeros(numberRows,2);
     int rowIndex = 0;
     for(int row = 0; row < scoreMap.rows(); row ++) {
@@ -154,8 +154,8 @@ public class Boxing {
     //sort from smallest to largest value
     Nd4j.sortRows(temp,1,true);
 
-
-    //restore
+    //restore this formula is given in the eval.py....
+    //origin switches the two columns and multiplies it by 4
     INDArray origin = Nd4j.zeros(numberRows,2);
     origin.putColumn(0, temp.getColumn(1).dup());
     origin.putColumn(1, temp.getColumn(0).dup());
@@ -164,6 +164,7 @@ public class Boxing {
     //TODO geomap
 
     INDArray textBoxRestored = restoreRectangle(origin, geoMap);
+
     long [] shape = textBoxRestored.shape();
     INDArray boxes = Nd4j.zerosLike(Nd4j.create(shape[0],9));
 
